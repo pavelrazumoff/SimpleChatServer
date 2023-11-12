@@ -31,7 +31,7 @@ int main()
 
 		if (bPrintMenu)
 		{
-			cout << "\nWelcome to a Chat Server.\n\n"
+			cout << "\nWelcome to the Chat Server.\n\n"
 				"The options you have:\n"
 				"\ta) Create a Host-Server to chat with your friends.\n"
 				"\tb) Connect to a remote server and chat with the Host.\n"
