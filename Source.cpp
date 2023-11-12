@@ -24,7 +24,6 @@ int main()
 
 	TCPSocketPtr socket;
 	bool bIsHost = false;
-
 	bool bPrintMenu = true;
 
 	do {
@@ -50,13 +49,17 @@ int main()
 		switch (c)
 		{
 			case 'a':
-				socket = MakeListenServer(errCode);
-				if (errCode != NO_ERROR) cout << "Failed to create a Host-Server. Error code: " << errCode << "\n";
-				else bIsHost = true;
+				{
+					socket = MakeListenServer(errCode);
+					if (errCode != NO_ERROR) cout << "Failed to create a Host-Server. Error code: " << errCode << "\n";
+					else bIsHost = true;
+				}
 				break;
 			case 'b':
-				socket = ConnectToServer(errCode);
-				if (errCode != NO_ERROR) cout << "Failed to connect to a remote server. Error code: " << errCode << "\n";
+				{
+					socket = ConnectToServer(errCode);
+					if (errCode != NO_ERROR) cout << "Failed to connect to a remote server. Error code: " << errCode << "\n";
+				}
 				break;
 			case 'c':
 				break;
@@ -119,7 +122,7 @@ TCPSocketPtr ConnectToServer(int& errCode)
 
 	if (address.empty()) address = defAddress;
 
-	SocketAddressPtr serverAddress = SocketAddressFactory::CreateIPv4FromString(address);
+	SocketAddressPtr serverAddress = SocketAddressFactory::CreateIPFromString(address);
 	TCPSocketPtr clientSocket = SocketUtil::CreateTCPSocket(SocketAddressFamily::INET);
 
 	errCode = clientSocket->Connect(*serverAddress);

@@ -6,7 +6,7 @@
 class SocketAddressFactory
 {
 public:
-	static SocketAddressPtr CreateIPv4FromString(const std::string& inString, SocketAddressFamily family = INET)
+	static SocketAddressPtr CreateIPFromString(const std::string& inString, SocketAddressFamily family = INET)
 	{
 		using namespace std;
 

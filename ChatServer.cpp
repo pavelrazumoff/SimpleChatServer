@@ -39,7 +39,7 @@ void ChatServer::StartServerLoop(std::ostream& logOut)
 
 	bIsServerRunning = false;
 
-	handleMessagesThread.join();
+	handleMessagesThread.join(); // Just waiting for the thread to finish.
 	mSocket->Shutdown();
 }
 
@@ -47,14 +47,15 @@ void ChatServer::ServerReadMessagesThread(std::ostream& logOut)
 {
 	using namespace std;
 
-	vector<TCPSocketPtr> readBlockSockets;
+	vector<TCPSocketPtr> readBlockSockets; /* Sockets to listen to. */
 	readBlockSockets.push_back(mSocket);
 
-	vector<TCPSocketPtr> readableSockets;
+	vector<TCPSocketPtr> readableSockets; /* Sockets that are ready to read. */
 
-	vector<TCPSocketPtr> writeBlockSockets;
-	vector<TCPSocketPtr> writableSockets;
+	vector<TCPSocketPtr> writeBlockSockets; /* Sockets in which we want to write. */
+	vector<TCPSocketPtr> writableSockets; /* Sockets that are ready to write to. */
 
+	/** Waiting for some data no more than 5 seconds in a blocking mode. */
 	timeval timeout;
 	timeout.tv_sec = 5;  // 5 seconds
 	timeout.tv_usec = 0;
@@ -69,9 +70,11 @@ void ChatServer::ServerReadMessagesThread(std::ostream& logOut)
 			std::unique_lock<std::shared_mutex> lock(sharedMtx);
 			bool bPrintInvitationSign = false;
 
+			// Go through all readable sockets.
+			// If there is at least one socket, it means that we have a new message from a client.
 			for (const auto& socket : readableSockets)
 			{
-				if (socket == mSocket)
+				if (socket == mSocket) // Listen socket got a new request for connection.
 				{
 					SocketAddress newClientAddress;
 					auto newSocket = socket->Accept(newClientAddress);
@@ -82,31 +85,33 @@ void ChatServer::ServerReadMessagesThread(std::ostream& logOut)
 
 					bPrintInvitationSign = true;
 				}
-				else
+				else // Client socket sent a message.
 				{
 					bPrintInvitationSign = true;
 
 					char segment[1024];
 					int dataReceived = socket->Receive(segment, 1024);
-					if (dataReceived > 0)
+					if (dataReceived > 0) // Client sent a regular message.
 					{
 						// TODO: Manage to detect clients, that are not writable for now to send them this message later.
 						ProcessClientMessage(socket, segment, dataReceived, writableSockets, logOut);
 					}
-					else if (dataReceived == 0)
+					else if (dataReceived == 0) // Client disconnected.
 					{
 						ProcessClientDisconnected(socket, logOut);
 						CollectSocketsFromConnectedClients(writeBlockSockets);
 
 						readBlockSockets.erase(find(readBlockSockets.begin(), readBlockSockets.end(), socket));
 					}
-					else
+					else // Some error while receiving a message.
 					{
 						logOut << "\nError " << dataReceived << " receiving message...\n";
 					}
 				}
 			}
 
+			// If there are some clients, most likely we do this every single loop cycle.
+			// Just synchronize all messages with all clients, even a new one.
 			for (const auto& socket : writableSockets)
 			{
 				int res = SyncChatMessagesWithClient(socket, logOut);
@@ -165,6 +170,15 @@ void ChatServer::ProcessClientDisconnected(TCPSocketPtr ClientSocket, std::ostre
 
 int ChatServer::SyncChatMessagesWithClient(TCPSocketPtr ClientSocket, std::ostream& logOut)
 {
+	/*
+		We must keep all clients up to date with all message history that we have.
+
+		Each time the client's socket is ready to write, we send a single message to it starting from the next after the last synced one.
+		With this approach we're making sure that we won't fill the outgoing socket buffer with many messages sending at once.
+		If the outgoing buffer is full, we won't send anything to client until its socket is ready to write again to.
+	*/
+
+	// Every client has its own data info on the server.
 	auto foundClient = FindClientInfoBySocket(ClientSocket);
 	if (foundClient == ConnectedClients.end())
 	{
@@ -193,10 +207,12 @@ int ChatServer::SyncChatMessagesWithClient(TCPSocketPtr ClientSocket, std::ostre
 	const std::string senderAddressStr = messageInfo.senderAddress->ToString();
 	const std::string clientAddressStr = clientAddress->ToString();
 
+	// Construct a single message to sync with a client.
 	std::string message;
 	message.append(senderAddressStr); message.append(": ");
 	message.append(messageInfo.message);
 
+	// Construct a message data to send to a client.
 	ChatSyncData syncData;
 	strcpy_s(syncData.message, message.c_str());
 	syncData.bFinalMessageInQueue = (nextMessageIndex == actualMessageIndex);
