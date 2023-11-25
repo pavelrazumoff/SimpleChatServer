@@ -132,6 +132,10 @@
     <ClInclude Include="ChatServer.h" />
     <ClInclude Include="ChatSocketHandler.h" />
     <ClInclude Include="ChatUtility.h" />
+    <ClInclude Include="Serialization\ByteSwap.h" />
+    <ClInclude Include="Serialization\LinkingContext.h" />
+    <ClInclude Include="Serialization\MemoryBitStream.h" />
+    <ClInclude Include="Serialization\MemoryStream.h" />
     <ClInclude Include="Socket\SocketAddress.h" />
     <ClInclude Include="Socket\SocketBase.h" />
     <ClInclude Include="Socket\SocketFactory.h" />
@@ -143,6 +147,9 @@
     <ClCompile Include="ChatClient.cpp" />
     <ClCompile Include="ChatServer.cpp" />
     <ClCompile Include="ChatSocketHandler.cpp" />
+    <ClCompile Include="ChatUtility.cpp" />
+    <ClCompile Include="Serialization\MemoryBitStream.cpp" />
+    <ClCompile Include="Serialization\MemoryStream.cpp" />
     <ClCompile Include="Socket\SocketAddress.cpp" />
     <ClCompile Include="Socket\SocketBase.cpp" />
     <ClCompile Include="Socket\SocketUtil.cpp" />

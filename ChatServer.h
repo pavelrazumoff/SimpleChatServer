@@ -39,7 +39,9 @@ protected:
 	void ProcessNewClient(TCPSocketPtr newClientSocket, const SocketAddress& newClientAddress, std::ostream& logOut);
 	void ProcessClientMessage(TCPSocketPtr ClientSocket, const char* data, int dataLen,
 		const std::vector<TCPSocketPtr>& availableClients, std::ostream& logOut);
+
 	void ProcessClientDisconnected(TCPSocketPtr ClientSocket, std::ostream& logOut);
+	bool ProcessClientError(int errorCode, TCPSocketPtr ClientSocket, std::ostream& logOut);
 
 	int SyncChatMessagesWithClient(TCPSocketPtr ClientSocket, std::ostream& logOut);
 

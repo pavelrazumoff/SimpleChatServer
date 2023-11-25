@@ -2,6 +2,7 @@
 
 #include "Socket/SocketUtil.h"
 #include "ChatUtility.h"
+#include "Serialization/MemoryStream.h"
 
 #include <iostream>
 #include <string>
@@ -49,6 +50,11 @@ void ChatServer::ServerReadMessagesThread(std::ostream& logOut)
 
 	vector<TCPSocketPtr> readBlockSockets; /* Sockets to listen to. */
 	readBlockSockets.push_back(mSocket);
+
+	auto REMOVE_SOCKET_FROM_SELECT = [](vector<TCPSocketPtr>& socketVec, const TCPSocketPtr& socket) -> void {
+		
+		socketVec.erase(find(socketVec.begin(), socketVec.end(), socket));
+	};
 
 	vector<TCPSocketPtr> readableSockets; /* Sockets that are ready to read. */
 
@@ -99,13 +105,20 @@ void ChatServer::ServerReadMessagesThread(std::ostream& logOut)
 					else if (dataReceived == 0) // Client disconnected.
 					{
 						ProcessClientDisconnected(socket, logOut);
-						CollectSocketsFromConnectedClients(writeBlockSockets);
 
-						readBlockSockets.erase(find(readBlockSockets.begin(), readBlockSockets.end(), socket));
+						CollectSocketsFromConnectedClients(writeBlockSockets);
+						REMOVE_SOCKET_FROM_SELECT(readBlockSockets, socket);
+						REMOVE_SOCKET_FROM_SELECT(writableSockets, socket);
 					}
 					else // Some error while receiving a message.
 					{
-						logOut << "\nError " << dataReceived << " receiving message...\n";
+						int errorCode = -dataReceived;
+						if (!ProcessClientError(errorCode, socket, logOut)) // If false - client was disconnected.
+						{
+							CollectSocketsFromConnectedClients(writeBlockSockets);
+							REMOVE_SOCKET_FROM_SELECT(readBlockSockets, socket);
+							REMOVE_SOCKET_FROM_SELECT(writableSockets, socket);
+						}
 					}
 				}
 			}
@@ -156,7 +169,7 @@ void ChatServer::ProcessClientDisconnected(TCPSocketPtr ClientSocket, std::ostre
 	SocketAddressPtr clientAddress;
 	if (0 == GetSocketAddress(ClientSocket.get(), clientAddress, logOut))
 	{
-		logOut << "\nClient " << clientAddress->ToString() << " disconnected.\n\n";
+		logOut << "\nClient " << clientAddress->ToString() << " was disconnected.\n\n";
 	}
 
 	auto foundClient = FindClientInfoBySocket(ClientSocket);
@@ -166,6 +179,26 @@ void ChatServer::ProcessClientDisconnected(TCPSocketPtr ClientSocket, std::ostre
 	}
 
 	ClientSocket->Shutdown();
+}
+
+bool ChatServer::ProcessClientError(int errorCode, TCPSocketPtr ClientSocket, std::ostream& logOut)
+{
+	logOut << "\nReceived an error (" << errorCode << ") from client...\n";
+
+	switch (errorCode)
+	{
+		case WSAECONNRESET:
+		case WSAENETRESET:
+		case WSAETIMEDOUT:
+		{
+			ProcessClientDisconnected(ClientSocket, logOut);
+			return false;
+		}
+		default:
+			break;
+	}
+
+	return true;
 }
 
 int ChatServer::SyncChatMessagesWithClient(TCPSocketPtr ClientSocket, std::ostream& logOut)
@@ -217,7 +250,11 @@ int ChatServer::SyncChatMessagesWithClient(TCPSocketPtr ClientSocket, std::ostre
 	strcpy_s(syncData.message, message.c_str());
 	syncData.bFinalMessageInQueue = (nextMessageIndex == actualMessageIndex);
 
-	int retResult = ClientSocket->Send(reinterpret_cast<const void*>(&syncData), sizeof(syncData));
+	OutputMemoryStream stream;
+	syncData.Write(stream);
+
+	int retResult = ClientSocket->Send(
+		reinterpret_cast<const void*>(stream.GetBufferPtr()), stream.GetLength());
 	if (retResult < 0)
 	{
 		logOut << "\nError " << retResult << " sending message...\n";

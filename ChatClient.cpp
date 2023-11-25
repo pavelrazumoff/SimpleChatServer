@@ -1,8 +1,20 @@
 #include "ChatClient.h"
 
 #include "ChatUtility.h"
+#include "Serialization/MemoryStream.h"
 
 #include <iostream>
+
+ChatClient::ChatClient(TCPSocketPtr _socket)
+	: ChatSocketHandler(_socket)
+	, mInputStream(new InputMemoryStream(MAX_PACKET_SIZE))
+{
+}
+
+ChatClient::~ChatClient()
+{
+	if (mInputStream) delete mInputStream;
+}
 
 void ChatClient::StartClientLoop(std::ostream& logOut)
 {
@@ -61,19 +73,25 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 	{
 		std::unique_lock<std::shared_mutex> lock(sharedMtx);
 
-		ChatSyncData segmentData;
-		int bytesReceived = mSocket->Receive(reinterpret_cast<void*>(&segmentData), sizeof(segmentData));
+		mInputStream->Reset();
+
+		int bytesReceived = mSocket->Receive(mInputStream->GetBufferPtr(), mInputStream->GetCapacity());
 		if (bytesReceived > 0) // Received some data.
 		{
 			if (!bWaitingForFinalMessage) logOut << "\n";
 
-			HandleReceivedSegment(segmentData, bytesReceived, logOut);
-			if (segmentData.bFinalMessageInQueue)
+			ChatSyncData segmentData;
+			if (HandleReceivedSegment(segmentData, bytesReceived, logOut))
 			{
-				bWaitingForFinalMessage = false;
-				logOut << ">: ";
+				if (segmentData.bFinalMessageInQueue)
+				{
+					bWaitingForFinalMessage = false;
+					logOut << ">: ";
+				}
+				else bWaitingForFinalMessage = true;
 			}
-			else bWaitingForFinalMessage = true;
+			else
+				logOut << ">: ";
 		}
 		else if (bytesReceived == 0) // Server sent a FIN flag. So the connection is closed.
 		{
@@ -90,20 +108,39 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 			if (-bytesReceived == WSAEWOULDBLOCK) continue;
 
 			// Okay, there was some error for sure.
-			logOut << "\nError " << -bytesReceived << " receiving message...\n";
+			int errorCode = -bytesReceived;
+			if(!ProcessServerError(errorCode, logOut))
+			{
+				bIsClientConnected = false;
+				break;
+			}
 		}
 	}
 }
 
-void ChatClient::HandleReceivedSegment(const ChatSyncData& segmentData, int bytesReceived, std::ostream& logOut)
+bool ChatClient::HandleReceivedSegment(ChatSyncData& segmentData, int bytesReceived, std::ostream& logOut)
 {
-	size_t expectSegmentSize = sizeof(segmentData);
-	if (expectSegmentSize <= bytesReceived)
+	if (!segmentData.Read(*mInputStream))
 	{
-		logOut << segmentData.message << "\n";
+		logOut << "Error reading segment data...\n";
+		return false;
 	}
-	else
+
+	logOut << segmentData.message << "\n";
+	return true;
+}
+
+bool ChatClient::ProcessServerError(int errorCode, std::ostream& logOut)
+{
+	logOut << "\nError " << errorCode << " receiving message...\n";
+
+	if (errorCode == WSAECONNRESET)
 	{
-		logOut << "Received " << bytesReceived << " bytes, but expected " << sizeof(segmentData) << " bytes...\n";
+		logOut << "Server disconnected...\n"
+				"Enter empty line to exit.\n"
+				">: ";
+		return false;
 	}
+
+	return true;
 }
