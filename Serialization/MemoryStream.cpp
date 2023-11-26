@@ -45,7 +45,7 @@ bool OutputMemoryStream::Write(const void* inData, size_t inByteCount)
 	return true;
 }
 
-bool OutputMemoryStream::Write(const ChatObject* inChatObject)
+bool OutputMemoryStream::Serialize(ChatObject*& ioChatObject)
 {
 	if (!mLinkingContext)
 	{
@@ -53,10 +53,8 @@ bool OutputMemoryStream::Write(const ChatObject* inChatObject)
 		return false;
 	}
 
-	uint32_t networkId = mLinkingContext->GetNetworkId(inChatObject);
-	Write(networkId);
-
-	return true;
+	uint32_t networkId = mLinkingContext->GetNetworkId(ioChatObject);
+	return MemoryStream::Serialize(networkId);
 }
 
 // ---------------------------------------------------------------------------
@@ -76,7 +74,7 @@ bool InputMemoryStream::Read(void* outData, uint32_t outByteCount)
 	return true;
 }
 
-bool InputMemoryStream::Read(ChatObject*& outChatObject)
+bool InputMemoryStream::Serialize(ChatObject*& ioChatObject)
 {
 	if (!mLinkingContext)
 	{
@@ -85,9 +83,9 @@ bool InputMemoryStream::Read(ChatObject*& outChatObject)
 	}
 
 	uint32_t networkId;
-	Read(networkId);
+	if (!MemoryStream::Serialize(networkId)) return false;
 
-	outChatObject = mLinkingContext->GetChatObject(networkId);
+	ioChatObject = mLinkingContext->GetChatObject(networkId);
 
 	return true;
 }

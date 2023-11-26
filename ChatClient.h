@@ -17,7 +17,7 @@ public:
 protected:
 	void ClientReceiveMessagesThread(std::ostream& logOut);
 
-	bool HandleReceivedSegment(ChatSyncData& segmentData, int bytesReceived, std::ostream& logOut);
+	bool HandleReceivedSegment(ChatSyncData& segmentData, std::ostream& logOut);
 	bool ProcessServerError(int errorCode, std::ostream& logOut);
 
 protected:

@@ -81,9 +81,19 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 			if (!bWaitingForFinalMessage) logOut << "\n";
 
 			ChatSyncData segmentData;
-			if (HandleReceivedSegment(segmentData, bytesReceived, logOut))
+			bool bFailed = false;
+			while (mInputStream->GetHandledDataSize() < (uint32_t)bytesReceived) // We could receive more than one segment (chat message) at once.
 			{
-				if (segmentData.bFinalMessageInQueue)
+				if (!HandleReceivedSegment(segmentData, logOut))
+				{
+					bFailed = true;
+					break;
+				}
+			}
+
+			if (!bFailed)
+			{
+				if (segmentData.bFinalMessageInQueue) // Here we have the last read message to check if it's the last one in the queue.
 				{
 					bWaitingForFinalMessage = false;
 					logOut << ">: ";
@@ -91,7 +101,10 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 				else bWaitingForFinalMessage = true;
 			}
 			else
+			{
 				logOut << ">: ";
+				bWaitingForFinalMessage = false; // Don't know what to do here. It could be the last or not message in queue. But it'd be better to just not wait for new messages in queue.
+			}
 		}
 		else if (bytesReceived == 0) // Server sent a FIN flag. So the connection is closed.
 		{
@@ -118,9 +131,9 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 	}
 }
 
-bool ChatClient::HandleReceivedSegment(ChatSyncData& segmentData, int bytesReceived, std::ostream& logOut)
+bool ChatClient::HandleReceivedSegment(ChatSyncData& segmentData, std::ostream& logOut)
 {
-	if (!segmentData.Read(*mInputStream))
+	if (!segmentData.Serialize(mInputStream))
 	{
 		logOut << "Error reading segment data...\n";
 		return false;

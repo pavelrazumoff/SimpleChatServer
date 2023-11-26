@@ -251,7 +251,7 @@ int ChatServer::SyncChatMessagesWithClient(TCPSocketPtr ClientSocket, std::ostre
 	syncData.bFinalMessageInQueue = (nextMessageIndex == actualMessageIndex);
 
 	OutputMemoryStream stream;
-	syncData.Write(stream);
+	syncData.Serialize(&stream);
 
 	int retResult = ClientSocket->Send(
 		reinterpret_cast<const void*>(stream.GetBufferPtr()), stream.GetLength());

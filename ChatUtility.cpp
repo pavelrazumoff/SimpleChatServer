@@ -2,24 +2,16 @@
 
 #include "Serialization/MemoryStream.h"
 
-bool ChatSyncData::Write(OutputMemoryStream& outStream)
+bool ChatSyncData::Serialize(MemoryStream* ioStream)
 {
-	uint16_t msgLen = static_cast<uint16_t>(strlen(message)) + 1;
+	if (!ioStream) return false;
 
-	if (!outStream.Write(msgLen) ||
-		!outStream.Write(message, msgLen) ||
-		!outStream.Write(bFinalMessageInQueue))
-		return false;
+	uint16_t msgLen = ioStream->IsInput() ? 0 :
+		static_cast<uint16_t>(strlen(message)) + 1;
 
-	return true;
-}
-
-bool ChatSyncData::Read(InputMemoryStream& inStream)
-{
-	uint16_t msgLen;
-	if (!inStream.Read(msgLen) ||
-		!inStream.Read(message, msgLen) ||
-		!inStream.Read(bFinalMessageInQueue))
+	if (!ioStream->Serialize(msgLen) ||
+		!ioStream->Serialize(message, msgLen) ||
+		!ioStream->Serialize(bFinalMessageInQueue))
 		return false;
 
 	return true;

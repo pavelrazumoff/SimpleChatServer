@@ -18,6 +18,60 @@ public:
 	MemoryStream() {}
 	virtual ~MemoryStream() { std::free(mBuffer); }
 
+	virtual bool Serialize(void* ioData, uint32_t inByteCount) = 0;
+
+	template <typename T>
+	bool Serialize(T& ioData)
+	{
+		static_assert(std::is_arithmetic<T>::value ||
+			std::is_enum<T>::value,
+			"Generic Serialize only supports primitive data types");
+
+		if (IsPlatformLittleEndian())
+			return Serialize(&ioData, sizeof(ioData));
+
+		if (IsInput())
+		{
+			if (!Serialize(&ioData, sizeof(ioData))) return false;
+			ioData = ByteSwap(ioData);
+		}
+		else
+		{
+			T swappedData = ByteSwap(ioData);
+			if (!Serialize(&swappedData, sizeof(swappedData))) return false;
+		}
+
+		return true;
+	}
+
+	template <typename T>
+	bool Serialize(std::vector<T>& ioVector)
+	{
+		if (IsInput())
+		{
+			size_t elementCount;
+			if (!Serialize(elementCount)) return false;
+
+			ioVector.resize(elementCount);
+			for (T& element : ioVector)
+				if (!Serialize(element)) return false;
+		}
+		else
+		{
+			size_t elementCount = ioVector.size();
+			if (!Serialize(elementCount)) return false;
+
+			for (T& element : ioVector)
+				if (!Serialize(element)) return false;
+		}
+		return true;
+	}
+
+	virtual bool Serialize(ChatObject*& ioChatObject) = 0;
+
+	virtual bool IsInput() const = 0;
+
+public:
 	void SetLinkingContext(LinkingContext* inLinkingContext) { mLinkingContext = inLinkingContext; }
 
 	bool ReallocBuffer(uint32_t inNewLength);
@@ -38,36 +92,17 @@ public:
 		ReallocBuffer(32);
 	}
 
+public:
+	virtual bool Serialize(void* ioData, uint32_t inByteCount) override
+	{
+		return Write(ioData, inByteCount);
+	}
+	virtual bool Serialize(ChatObject*& ioChatObject) override;
+
+	virtual bool IsInput() const override { return false; }
+
+public:
 	bool Write(const void* inData, size_t inByteCount);
-
-	template<typename T>
-	bool Write(T inData)
-	{
-		static_assert(std::is_arithmetic<T>::value ||
-			std::is_enum<T>::value,
-			"Generic Write only supports primitive data types");
-
-		// Always write in little endian format.
-		if (IsPlatformLittleEndian())
-			return Write(&inData, sizeof(inData));
-
-		T swappedData = ByteSwap(inData);
-		return Write(&swappedData, sizeof(swappedData));
-	}
-
-	template <typename T>
-	bool Write(const std::vector<T>& inVector)
-	{
-		size_t elementCount = inVector.size();
-		if (!Write(elementCount)) return false;
-
-		for (const T& element : inVector)
-			if (!Write(element)) return false;
-
-		return true;
-	}
-
-	bool Write(const ChatObject* inChatObject);
 
 	const char* GetBufferPtr() const { return mBuffer; }
 	uint32_t GetLength() const { return mHead; }
@@ -91,40 +126,20 @@ public:
 	}
 
 	char* GetBufferPtr() const { return mBuffer; }
-	uint32_t GetRemainingDataSize() const { return mCapacity - mHead; }
+	uint32_t GetHandledDataSize() const { return mHead; } /** How many bytes did we already read. */
 	uint32_t GetCapacity() const { return mCapacity; }
 
+public:
+	virtual bool Serialize(void* ioData, uint32_t inByteCount) override
+	{
+		return Read(ioData, inByteCount);
+	}
+	virtual bool Serialize(ChatObject*& ioChatObject) override;
+
+	virtual bool IsInput() const override { return true; }
+
+public:
 	bool Read(void* outData, uint32_t outByteCount);
-
-	template<typename T>
-	bool Read(T& outData)
-	{
-		static_assert(std::is_arithmetic<T>::value ||
-			std::is_enum<T>::value,
-			"Generic Read only supports primitive data types");
-
-		if (!Read(&outData, sizeof(outData))) return false;
-
-		// We always sure, that data is in little endian format.
-		// So if this platform is not we should swap the endianness.
-		if (!IsPlatformLittleEndian())
-			outData = ByteSwap(outData);
-		return true;
-	}
-
-	template <typename T>
-	bool Read(std::vector<T> outVector)
-	{
-		size_t elementCount;
-		if (!Read(elementCount)) return false;
-
-		outVector.resize(elementCount);
-		for (const T& element : outVector)
-			if (!Read(element)) return false;
-		return true;
-	}
-
-	bool Read(ChatObject*& outChatObject);
 
 	void Reset();
 };
