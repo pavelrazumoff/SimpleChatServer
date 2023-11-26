@@ -132,6 +132,8 @@
     <ClInclude Include="ChatServer.h" />
     <ClInclude Include="ChatSocketHandler.h" />
     <ClInclude Include="ChatUtility.h" />
+    <ClInclude Include="ReflectionSystem\DataType.h" />
+    <ClInclude Include="ReflectionSystem\MemberVariable.h" />
     <ClInclude Include="Serialization\ByteSwap.h" />
     <ClInclude Include="Serialization\LinkingContext.h" />
     <ClInclude Include="Serialization\MemoryBitStream.h" />

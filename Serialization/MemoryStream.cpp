@@ -45,6 +45,15 @@ bool OutputMemoryStream::Write(const void* inData, size_t inByteCount)
 	return true;
 }
 
+bool OutputMemoryStream::Serialize(std::string& ioStr)
+{
+	uint32_t strLen = (uint32_t)ioStr.length();
+	if (!Serialize(strLen)) return false;
+	if (!Serialize(&ioStr.front(), strLen)) return false;
+
+	return true;
+}
+
 bool OutputMemoryStream::Serialize(ChatObject*& ioChatObject)
 {
 	if (!mLinkingContext)
@@ -70,6 +79,17 @@ bool InputMemoryStream::Read(void* outData, uint32_t outByteCount)
 
 	std::memcpy(outData, mBuffer + mHead, outByteCount);
 	mHead = resultHead;
+
+	return true;
+}
+
+bool InputMemoryStream::Serialize(std::string& ioStr)
+{
+	uint32_t strLen;
+	if (!Serialize(strLen)) return false;
+
+	ioStr.resize(strLen);
+	if (!Serialize(&ioStr.front(), strLen)) return false;
 
 	return true;
 }

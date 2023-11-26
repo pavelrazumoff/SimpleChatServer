@@ -1,9 +1,10 @@
 #pragma once
 
 #include "ChatSocketHandler.h"
+#include "ChatUtility.h"
+
 #include <shared_mutex>
 
-struct ChatSyncData;
 class InputMemoryStream;
 
 class ChatClient : public ChatSocketHandler
@@ -17,7 +18,11 @@ public:
 protected:
 	void ClientReceiveMessagesThread(std::ostream& logOut);
 
+	#if USE_REFLECTION_SYSTEM_DATA()
+	bool HandleReceivedSegment(ChatObject& segmentData, std::ostream& logOut);
+	#else // USE_REFLECTION_SYSTEM_DATA()
 	bool HandleReceivedSegment(ChatSyncData& segmentData, std::ostream& logOut);
+	#endif // USE_REFLECTION_SYSTEM_DATA()
 	bool ProcessServerError(int errorCode, std::ostream& logOut);
 
 protected:

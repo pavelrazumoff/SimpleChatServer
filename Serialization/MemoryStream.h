@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <type_traits>
 #include <vector>
+#include <string>
 
 #include "ByteSwap.h"
 
@@ -43,6 +44,8 @@ public:
 
 		return true;
 	}
+
+	virtual bool Serialize(std::string& ioStr) = 0;
 
 	template <typename T>
 	bool Serialize(std::vector<T>& ioVector)
@@ -93,10 +96,13 @@ public:
 	}
 
 public:
+	using MemoryStream::Serialize; // Force compiler to unhide some Serialize base class implementations that were hidden by inheritance and not reimplemented here.
+
 	virtual bool Serialize(void* ioData, uint32_t inByteCount) override
 	{
 		return Write(ioData, inByteCount);
 	}
+	virtual bool Serialize(std::string& ioStr) override;
 	virtual bool Serialize(ChatObject*& ioChatObject) override;
 
 	virtual bool IsInput() const override { return false; }
@@ -130,10 +136,13 @@ public:
 	uint32_t GetCapacity() const { return mCapacity; }
 
 public:
+	using MemoryStream::Serialize; // Force compiler to unhide some Serialize base class implementations that were hidden by inheritance and not reimplemented here.
+
 	virtual bool Serialize(void* ioData, uint32_t inByteCount) override
 	{
 		return Read(ioData, inByteCount);
 	}
+	virtual bool Serialize(std::string& ioStr) override;
 	virtual bool Serialize(ChatObject*& ioChatObject) override;
 
 	virtual bool IsInput() const override { return true; }

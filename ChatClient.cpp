@@ -1,6 +1,5 @@
 #include "ChatClient.h"
 
-#include "ChatUtility.h"
 #include "Serialization/MemoryStream.h"
 
 #include <iostream>
@@ -80,7 +79,12 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 		{
 			if (!bWaitingForFinalMessage) logOut << "\n";
 
+			#if USE_REFLECTION_SYSTEM_DATA()
+			ChatObject segmentData;
+			#else // USE_REFLECTION_SYSTEM_DATA()
 			ChatSyncData segmentData;
+			#endif // USE_REFLECTION_SYSTEM_DATA()
+
 			bool bFailed = false;
 			while (mInputStream->GetHandledDataSize() < (uint32_t)bytesReceived) // We could receive more than one segment (chat message) at once.
 			{
@@ -93,7 +97,13 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 
 			if (!bFailed)
 			{
-				if (segmentData.bFinalMessageInQueue) // Here we have the last read message to check if it's the last one in the queue.
+				#if USE_REFLECTION_SYSTEM_DATA()
+				const bool bLastInQueue = segmentData.IsLastMessageInQueue();
+				#else // USE_REFLECTION_SYSTEM_DATA()
+				const bool bLastInQueue = segmentData.bFinalMessageInQueue;
+				#endif // USE_REFLECTION_SYSTEM_DATA()
+
+				if (bLastInQueue) // Here we have the last read message to check if it's the last one in the queue.
 				{
 					bWaitingForFinalMessage = false;
 					logOut << ">: ";
@@ -131,6 +141,19 @@ void ChatClient::ClientReceiveMessagesThread(std::ostream& logOut)
 	}
 }
 
+#if USE_REFLECTION_SYSTEM_DATA()
+bool ChatClient::HandleReceivedSegment(ChatObject& segmentData, std::ostream& logOut)
+{
+	if (!SerializeObject(mInputStream, segmentData.GetDataType(), reinterpret_cast<uint8_t*>(&segmentData)))
+	{
+		logOut << "Error reading segment data...\n";
+		return false;
+	}
+
+	logOut << segmentData.GetChatMessage() << "\n";
+	return true;
+}
+#else // USE_REFLECTION_SYSTEM_DATA()
 bool ChatClient::HandleReceivedSegment(ChatSyncData& segmentData, std::ostream& logOut)
 {
 	if (!segmentData.Serialize(mInputStream))
@@ -142,6 +165,7 @@ bool ChatClient::HandleReceivedSegment(ChatSyncData& segmentData, std::ostream& 
 	logOut << segmentData.message << "\n";
 	return true;
 }
+#endif // USE_REFLECTION_SYSTEM_DATA()
 
 bool ChatClient::ProcessServerError(int errorCode, std::ostream& logOut)
 {

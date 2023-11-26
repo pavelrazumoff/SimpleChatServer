@@ -5,7 +5,6 @@
 #include "Serialization/MemoryStream.h"
 
 #include <iostream>
-#include <string>
 
 void ChatServer::StartServerLoop(std::ostream& logOut)
 {
@@ -246,12 +245,20 @@ int ChatServer::SyncChatMessagesWithClient(TCPSocketPtr ClientSocket, std::ostre
 	message.append(messageInfo.message);
 
 	// Construct a message data to send to a client.
-	ChatSyncData syncData;
-	strcpy_s(syncData.message, message.c_str());
-	syncData.bFinalMessageInQueue = (nextMessageIndex == actualMessageIndex);
+	const bool bLastInQueue = (nextMessageIndex == actualMessageIndex);
 
 	OutputMemoryStream stream;
+
+	#if USE_REFLECTION_SYSTEM_DATA()
+	ChatObject chatObj(message.c_str(), bLastInQueue);
+	SerializeObject(&stream, chatObj.GetDataType(), reinterpret_cast<uint8_t*>(&chatObj));
+	#else // USE_REFLECTION_SYSTEM_DATA()
+	ChatSyncData syncData;
+	strcpy_s(syncData.message, message.c_str());
+	syncData.bFinalMessageInQueue = bLastInQueue;
+
 	syncData.Serialize(&stream);
+	#endif // USE_REFLECTION_SYSTEM_DATA()
 
 	int retResult = ClientSocket->Send(
 		reinterpret_cast<const void*>(stream.GetBufferPtr()), stream.GetLength());
