@@ -32,8 +32,8 @@ int main()
 		{
 			cout << "\nWelcome to the Chat Server.\n\n"
 				"The options you have:\n"
-				"\ta) Create a Host-Server to chat with your friends.\n"
-				"\tb) Connect to a remote server and chat with the Host.\n"
+				"\ta) Create a Host-Server to let your friends chat with each other.\n"
+				"\tb) Connect to a remote server and chat with your friends.\n"
 				"\tc) Exit.\n\n"
 				"\t>: ";
 		}

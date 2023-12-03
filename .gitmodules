@@ -1,0 +1,3 @@
+[submodule "NetworkCore"]
+	path = NetworkCore
+	url = https://github.com/pavelrazumoff/NetworkCore

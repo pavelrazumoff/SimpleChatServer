@@ -13,41 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Socket">
-      <UniqueIdentifier>{895eb2ea-7e3e-4a8d-b336-3ce630034500}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Socket">
-      <UniqueIdentifier>{9430816c-088c-4202-9bf8-f04512a2d22d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Serialization">
-      <UniqueIdentifier>{9cf202ee-8608-4444-8937-4fb13cfbd568}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Serialization">
-      <UniqueIdentifier>{6d02549b-0ca5-4987-a7df-90de8992e32a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\ReflectionSystem">
-      <UniqueIdentifier>{cb4c859e-97fc-4695-847e-e81942b6e5b7}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Socket\SocketAddress.h">
-      <Filter>Header Files\Socket</Filter>
-    </ClInclude>
-    <ClInclude Include="Socket\SocketBase.h">
-      <Filter>Header Files\Socket</Filter>
-    </ClInclude>
-    <ClInclude Include="Socket\SocketFactory.h">
-      <Filter>Header Files\Socket</Filter>
-    </ClInclude>
-    <ClInclude Include="Socket\SocketUtil.h">
-      <Filter>Header Files\Socket</Filter>
-    </ClInclude>
-    <ClInclude Include="Socket\TCPSocket.h">
-      <Filter>Header Files\Socket</Filter>
-    </ClInclude>
-    <ClInclude Include="Socket\UDPSocket.h">
-      <Filter>Header Files\Socket</Filter>
-    </ClInclude>
     <ClInclude Include="ChatClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -60,41 +27,8 @@
     <ClInclude Include="ChatUtility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Serialization\MemoryStream.h">
-      <Filter>Header Files\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Serialization\ByteSwap.h">
-      <Filter>Header Files\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Serialization\MemoryBitStream.h">
-      <Filter>Header Files\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Serialization\LinkingContext.h">
-      <Filter>Header Files\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="ReflectionSystem\MemberVariable.h">
-      <Filter>Header Files\ReflectionSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="ReflectionSystem\DataType.h">
-      <Filter>Header Files\ReflectionSystem</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Socket\SocketAddress.cpp">
-      <Filter>Source Files\Socket</Filter>
-    </ClCompile>
-    <ClCompile Include="Socket\SocketBase.cpp">
-      <Filter>Source Files\Socket</Filter>
-    </ClCompile>
-    <ClCompile Include="Socket\SocketUtil.cpp">
-      <Filter>Source Files\Socket</Filter>
-    </ClCompile>
-    <ClCompile Include="Socket\TCPSocket.cpp">
-      <Filter>Source Files\Socket</Filter>
-    </ClCompile>
-    <ClCompile Include="Socket\UDPSocket.cpp">
-      <Filter>Source Files\Socket</Filter>
-    </ClCompile>
     <ClCompile Include="ChatClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -107,14 +41,8 @@
     <ClCompile Include="Source.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Serialization\MemoryStream.cpp">
-      <Filter>Source Files\Serialization</Filter>
-    </ClCompile>
     <ClCompile Include="ChatUtility.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Serialization\MemoryBitStream.cpp">
-      <Filter>Source Files\Serialization</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
